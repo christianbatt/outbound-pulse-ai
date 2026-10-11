@@ -1,21 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Cpu, CheckCircle2 } from 'lucide-react';
+import { Locale, TRANSLATIONS } from '../utils/i18n';
 
 interface ProgressBarProps {
   isGenerating: boolean;
+  locale?: Locale;
 }
 
-const STAGES = [
-  { label: 'Analisi Core Business & Mercato Target', targetProgress: 28 },
-  { label: 'Isolamento Value Proposition & Problemi Risolti', targetProgress: 56 },
-  { label: 'Rilevamento Pain Points Operativi e di Crescita', targetProgress: 82 },
-  { label: 'Generazione Copy AIDA e Sequenza Outbound Follow-up', targetProgress: 96 },
-];
-
-export const ProgressBar: React.FC<ProgressBarProps> = ({ isGenerating }) => {
+export const ProgressBar: React.FC<ProgressBarProps> = ({ isGenerating, locale = 'it' }) => {
   const [progress, setProgress] = useState(12);
   const [stageIndex, setStageIndex] = useState(0);
   const [seconds, setSeconds] = useState(0);
+
+  const t = TRANSLATIONS[locale];
+  const stages = t.progressStages;
 
   useEffect(() => {
     if (!isGenerating) {
@@ -65,7 +63,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ isGenerating }) => {
       <div className="flex items-center justify-between text-xs mb-3">
         <div className="flex items-center gap-2 text-indigo-300 font-medium">
           <Cpu className="w-4 h-4 text-indigo-400 animate-spin" />
-          <span>{STAGES[stageIndex]?.label || 'Elaborazione logica B2B in corso...'}</span>
+          <span>{stages[stageIndex] || stages[0]}</span>
         </div>
         <div className="flex items-center gap-2 font-mono text-slate-400">
           <span>{seconds.toFixed(1)}s</span>
@@ -86,7 +84,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ isGenerating }) => {
 
       {/* Multi-step indicator pills */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-2 border-t border-slate-800/60 text-[11px]">
-        {STAGES.map((s, idx) => {
+        {stages.map((stageLabel, idx) => {
           const isDone = stageIndex > idx;
           const isCurrent = stageIndex === idx;
           return (
@@ -109,7 +107,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ isGenerating }) => {
                   }`}
                 />
               )}
-              <span className="truncate">{s.label.split(' ')[1]}</span>
+              <span className="truncate">{stageLabel.split(' ')[0]} {stageLabel.split(' ')[1] || ''}</span>
             </div>
           );
         })}

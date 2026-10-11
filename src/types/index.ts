@@ -48,6 +48,7 @@ export interface UserSettings {
   tone: string;
   ctaStyle: string;
   language: string;
+  locale: 'it' | 'en' | 'fr';
   theme: 'dark' | 'midnight' | 'obsidian' | 'light';
   soundEnabled: boolean;
   autoSave: boolean;

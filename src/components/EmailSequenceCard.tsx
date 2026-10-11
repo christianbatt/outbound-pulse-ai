@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Mail,
   Copy,
   Check,
   Clock,
-  Sparkles,
-  ExternalLink,
-  Share2,
-  FileDown,
-  CheckCheck,
   Send,
   Eye,
+  CheckCheck,
+  FileDown,
   Edit3,
+  RotateCcw,
 } from 'lucide-react';
 import { EmailCampaign, UserSettings } from '../types';
 import { playCopyChime } from '../utils/audio';
+import { TRANSLATIONS } from '../utils/i18n';
+import { copyToClipboard } from '../utils/clipboard';
 
 interface EmailSequenceCardProps {
   campaign: EmailCampaign;
@@ -33,49 +33,79 @@ export const EmailSequenceCard: React.FC<EmailSequenceCardProps> = ({
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+
+  // Editable local draft state
+  const [email1Subject, setEmail1Subject] = useState(campaign.email_1_hook.subject);
+  const [email1Body, setEmail1Body] = useState(campaign.email_1_hook.body);
+  const [email2Subject, setEmail2Subject] = useState(campaign.email_2_followup.subject);
+  const [email2Body, setEmail2Body] = useState(campaign.email_2_followup.body);
+
+  const t = TRANSLATIONS[settings.locale || 'it'];
+
+  // Sync state if campaign changes
+  useEffect(() => {
+    setEmail1Subject(campaign.email_1_hook.subject);
+    setEmail1Body(campaign.email_1_hook.body);
+    setEmail2Subject(campaign.email_2_followup.subject);
+    setEmail2Body(campaign.email_2_followup.body);
+  }, [campaign]);
 
   // Dynamic variable replacement helper for real-world preview
   const formatEmailBody = (rawBody: string) => {
     let text = rawBody;
-    // Replace typical placeholders if present or personalize
     text = text.replace(/\[Nome\s*(?:Lead|Referente|Destinatario)?\]/gi, settings.recipientName || 'Alex');
     text = text.replace(/\[Tuo\s*Nome\]/gi, settings.senderName || 'Marco Rossi');
     text = text.replace(/\[Tua\s*Azienda\]/gi, settings.senderCompany || 'GrowthMatrix');
     return text;
   };
 
-  const handleCopy = (content: string, id: string, label: string) => {
-    navigator.clipboard.writeText(content);
-    setCopiedId(id);
-    if (soundEnabled) playCopyChime();
-    onToast(`Copiato: ${label}`);
-    setTimeout(() => setCopiedId(null), 2000);
+  const handleCopy = async (content: string, id: string, label: string) => {
+    const success = await copyToClipboard(content);
+    if (success) {
+      setCopiedId(id);
+      if (soundEnabled) playCopyChime();
+      onToast(`${t.textCopiedBtn} (${label})`);
+      setTimeout(() => setCopiedId(null), 2000);
+    } else {
+      onToast('Impossibile copiare negli appunti');
+    }
   };
 
-  const handleCopyEntireSequence = () => {
-    const sequenceText = `EMAIL 1: HOOK AIDA (Giorno 1)
-Oggetto: ${campaign.email_1_hook.subject}
+  const handleCopyEntireSequence = async () => {
+    const sequenceText = `${t.email1Badge.toUpperCase()} (${t.email1Timing})
+${t.subjectLabel} ${email1Subject}
 ---
-${formatEmailBody(campaign.email_1_hook.body)}
+${formatEmailBody(email1Body)}
 
 ==================================================
 
-EMAIL 2: FOLLOW-UP (Giorno 4 / +3gg)
-Oggetto: ${campaign.email_2_followup.subject}
+${t.email2Badge.toUpperCase()} (${t.email2Timing})
+${t.subjectLabel} ${email2Subject}
 ---
-${formatEmailBody(campaign.email_2_followup.body)}
+${formatEmailBody(email2Body)}
 `;
-    navigator.clipboard.writeText(sequenceText);
-    setCopiedId('full-sequence');
-    if (soundEnabled) playCopyChime();
-    onToast("Intera sequenza (Email 1 + Email 2) copiata negli appunti!");
-    setTimeout(() => setCopiedId(null), 2000);
+    const success = await copyToClipboard(sequenceText);
+    if (success) {
+      setCopiedId('full-sequence');
+      if (soundEnabled) playCopyChime();
+      onToast(t.bothCopiedBtn);
+      setTimeout(() => setCopiedId(null), 2000);
+    }
+  };
+
+  const resetToOriginal = () => {
+    setEmail1Subject(campaign.email_1_hook.subject);
+    setEmail1Body(campaign.email_1_hook.body);
+    setEmail2Subject(campaign.email_2_followup.subject);
+    setEmail2Body(campaign.email_2_followup.body);
+    onToast('Testo ripristinato');
   };
 
   const countWords = (text: string) => (text.trim() ? text.trim().split(/\s+/).length : 0);
 
-  const email1Words = countWords(campaign.email_1_hook.body);
-  const email2Words = countWords(campaign.email_2_followup.body);
+  const email1Words = countWords(email1Body);
+  const email2Words = countWords(email2Body);
 
   const createMailtoLink = (subject: string, body: string) => {
     const formatted = formatEmailBody(body);
@@ -93,42 +123,55 @@ ${formatEmailBody(campaign.email_2_followup.body)}
             </div>
             <div>
               <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-                <span>Sequenza Outbound Ad Alta Conversione</span>
+                <span>{t.sequenceTitle}</span>
               </h3>
               <p className="text-xs text-slate-400">
-                2 email iper-personalizzate pronte all'invio
+                {t.sequenceSubtitle}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                isEditing
+                  ? 'bg-amber-600/20 border-amber-500 text-amber-300'
+                  : 'bg-slate-800/90 border-slate-700/60 text-slate-300 hover:text-white'
+              }`}
+              title="Modifica testo email"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>{isEditing ? 'Salva Modifiche' : 'Modifica'}</span>
+            </button>
+
             <button
               onClick={() => setIsPreviewMode(!isPreviewMode)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
                 isPreviewMode
                   ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300'
                   : 'bg-slate-800/90 border-slate-700/60 text-slate-300 hover:text-white'
               }`}
-              title="Anteprima con dati mittente/destinatario inseriti"
+              title="Preview mode"
             >
               <Eye className="w-3.5 h-3.5" />
-              <span>{isPreviewMode ? 'Vista Reale' : 'Variabili'}</span>
+              <span>{isPreviewMode ? t.previewToggle : t.variablesToggle}</span>
             </button>
 
             <button
               onClick={handleCopyEntireSequence}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition-all active:scale-95"
-              title="Copia entrambe le email contemporaneamente"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition-all active:scale-95 cursor-pointer"
+              title="Copy both emails"
             >
               {copiedId === 'full-sequence' ? (
                 <>
                   <CheckCheck className="w-3.5 h-3.5 text-white" />
-                  <span>Sequenza Copiata!</span>
+                  <span>{t.bothCopiedBtn}</span>
                 </>
               ) : (
                 <>
                   <Copy className="w-3.5 h-3.5" />
-                  <span>Copia Entrambe</span>
+                  <span>{t.copyBothBtn}</span>
                 </>
               )}
             </button>
@@ -141,9 +184,9 @@ ${formatEmailBody(campaign.email_2_followup.body)}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                Email #1 • Hook AIDA
+                {t.email1Badge}
               </span>
-              <span className="text-[11px] text-slate-400 font-medium">Giorno 1</span>
+              <span className="text-[11px] text-slate-400 font-medium">{t.email1Timing}</span>
             </div>
 
             <div className="flex items-center gap-2 text-xs">
@@ -153,9 +196,9 @@ ${formatEmailBody(campaign.email_2_followup.body)}
                     ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/40'
                     : 'bg-amber-950/60 text-amber-400 border border-amber-800/40'
                 }`}
-                title="Target di lunghezza: max 120 parole"
+                title="Target"
               >
-                {email1Words} parole / max 120
+                {email1Words} {t.wordsLabel} / {t.email1Target}
               </span>
             </div>
           </div>
@@ -163,59 +206,77 @@ ${formatEmailBody(campaign.email_2_followup.body)}
           {/* Subject Line */}
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs text-slate-400">
-              <span className="font-semibold uppercase tracking-wider text-slate-300">Oggetto:</span>
+              <span className="font-semibold uppercase tracking-wider text-slate-300">{t.subjectLabel}</span>
               <button
-                onClick={() => handleCopy(campaign.email_1_hook.subject, 'e1-sub', 'Oggetto Email 1')}
-                className="flex items-center gap-1 text-slate-400 hover:text-indigo-300 transition-colors"
-                title="Copia solo l'oggetto"
+                onClick={() => handleCopy(email1Subject, 'e1-sub', 'Subject')}
+                className="flex items-center gap-1 text-slate-400 hover:text-indigo-300 transition-colors cursor-pointer"
+                title={t.copySubjectBtn}
               >
                 {copiedId === 'e1-sub' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span className="text-[11px]">Copia Oggetto</span>
+                <span className="text-[11px]">{t.copySubjectBtn}</span>
               </button>
             </div>
-            <div className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-sm font-medium text-slate-100 flex items-center justify-between">
-              <span className="truncate">{campaign.email_1_hook.subject}</span>
-            </div>
+            {isEditing ? (
+              <input
+                type="text"
+                value={email1Subject}
+                onChange={(e) => setEmail1Subject(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-indigo-500/60 text-sm font-medium text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+            ) : (
+              <div className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-sm font-medium text-slate-100 flex items-center justify-between">
+                <span className="truncate">{email1Subject}</span>
+              </div>
+            )}
           </div>
 
           {/* Email Body */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs text-slate-400">
-              <span className="font-semibold uppercase tracking-wider text-slate-300">Corpo del messaggio:</span>
+              <span className="font-semibold uppercase tracking-wider text-slate-300">{t.bodyLabel}</span>
               <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                <Clock className="w-3 h-3" /> ~30 sec lettura
+                <Clock className="w-3 h-3" /> {t.readingTime1}
               </span>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-sm text-slate-200 leading-relaxed font-sans whitespace-pre-wrap select-text">
-              {formatEmailBody(campaign.email_1_hook.body)}
-            </div>
+            {isEditing ? (
+              <textarea
+                value={email1Body}
+                onChange={(e) => setEmail1Body(e.target.value)}
+                rows={6}
+                className="w-full p-3.5 rounded-xl bg-slate-900 border border-indigo-500/60 text-sm text-slate-100 leading-relaxed font-sans focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y"
+              />
+            ) : (
+              <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-sm text-slate-200 leading-relaxed font-sans whitespace-pre-wrap select-text">
+                {formatEmailBody(email1Body)}
+              </div>
+            )}
           </div>
 
           {/* Bottom Card Actions */}
           <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-800/60">
             <a
-              href={createMailtoLink(campaign.email_1_hook.subject, campaign.email_1_hook.body)}
+              href={createMailtoLink(email1Subject, email1Body)}
               className="text-xs text-slate-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
-              title="Apri nel tuo client di posta predefinito"
+              title="Mailto"
             >
               <Send className="w-3 h-3" />
-              <span>Apri bozza email</span>
+              <span>{t.openMailto}</span>
             </a>
 
             <button
-              onClick={() => handleCopy(formatEmailBody(campaign.email_1_hook.body), 'e1-body', 'Corpo Email 1')}
+              onClick={() => handleCopy(formatEmailBody(email1Body), 'e1-body', 'Email 1')}
               className="px-3.5 py-1.5 rounded-lg bg-indigo-600/15 hover:bg-indigo-600/30 text-indigo-300 hover:text-indigo-200 border border-indigo-500/30 text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
             >
               {copiedId === 'e1-body' ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-emerald-300">Copiato!</span>
+                  <span className="text-emerald-300">{t.textCopiedBtn}</span>
                 </>
               ) : (
                 <>
                   <Copy className="w-3.5 h-3.5" />
-                  <span>Copia testo</span>
+                  <span>{t.copyTextBtn}</span>
                 </>
               )}
             </button>
@@ -228,9 +289,9 @@ ${formatEmailBody(campaign.email_2_followup.body)}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                Email #2 • Follow-up & Caso d'uso
+                {t.email2Badge}
               </span>
-              <span className="text-[11px] text-slate-400 font-medium">Giorno 4 (+3 giorni)</span>
+              <span className="text-[11px] text-slate-400 font-medium">{t.email2Timing}</span>
             </div>
 
             <div className="flex items-center gap-2 text-xs">
@@ -240,9 +301,9 @@ ${formatEmailBody(campaign.email_2_followup.body)}
                     ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/40'
                     : 'bg-amber-950/60 text-amber-400 border border-amber-800/40'
                 }`}
-                title="Target di lunghezza: max 80 parole"
+                title="Target"
               >
-                {email2Words} parole / max 80
+                {email2Words} {t.wordsLabel} / {t.email2Target}
               </span>
             </div>
           </div>
@@ -250,59 +311,77 @@ ${formatEmailBody(campaign.email_2_followup.body)}
           {/* Subject Line */}
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs text-slate-400">
-              <span className="font-semibold uppercase tracking-wider text-slate-300">Oggetto:</span>
+              <span className="font-semibold uppercase tracking-wider text-slate-300">{t.subjectLabel}</span>
               <button
-                onClick={() => handleCopy(campaign.email_2_followup.subject, 'e2-sub', 'Oggetto Email 2')}
-                className="flex items-center gap-1 text-slate-400 hover:text-cyan-300 transition-colors"
-                title="Copia solo l'oggetto"
+                onClick={() => handleCopy(email2Subject, 'e2-sub', 'Subject')}
+                className="flex items-center gap-1 text-slate-400 hover:text-cyan-300 transition-colors cursor-pointer"
+                title={t.copySubjectBtn}
               >
                 {copiedId === 'e2-sub' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span className="text-[11px]">Copia Oggetto</span>
+                <span className="text-[11px]">{t.copySubjectBtn}</span>
               </button>
             </div>
-            <div className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-sm font-medium text-slate-100 flex items-center justify-between">
-              <span className="truncate">{campaign.email_2_followup.subject}</span>
-            </div>
+            {isEditing ? (
+              <input
+                type="text"
+                value={email2Subject}
+                onChange={(e) => setEmail2Subject(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-cyan-500/60 text-sm font-medium text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+              />
+            ) : (
+              <div className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-sm font-medium text-slate-100 flex items-center justify-between">
+                <span className="truncate">{email2Subject}</span>
+              </div>
+            )}
           </div>
 
           {/* Email Body */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs text-slate-400">
-              <span className="font-semibold uppercase tracking-wider text-slate-300">Corpo del messaggio:</span>
+              <span className="font-semibold uppercase tracking-wider text-slate-300">{t.bodyLabel}</span>
               <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                <Clock className="w-3 h-3" /> ~20 sec lettura
+                <Clock className="w-3 h-3" /> {t.readingTime2}
               </span>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-sm text-slate-200 leading-relaxed font-sans whitespace-pre-wrap select-text">
-              {formatEmailBody(campaign.email_2_followup.body)}
-            </div>
+            {isEditing ? (
+              <textarea
+                value={email2Body}
+                onChange={(e) => setEmail2Body(e.target.value)}
+                rows={5}
+                className="w-full p-3.5 rounded-xl bg-slate-900 border border-cyan-500/60 text-sm text-slate-100 leading-relaxed font-sans focus:outline-none focus:ring-1 focus:ring-cyan-500 resize-y"
+              />
+            ) : (
+              <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-sm text-slate-200 leading-relaxed font-sans whitespace-pre-wrap select-text">
+                {formatEmailBody(email2Body)}
+              </div>
+            )}
           </div>
 
           {/* Bottom Card Actions */}
           <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-800/60">
             <a
-              href={createMailtoLink(campaign.email_2_followup.subject, campaign.email_2_followup.body)}
+              href={createMailtoLink(email2Subject, email2Body)}
               className="text-xs text-slate-400 hover:text-cyan-300 flex items-center gap-1 transition-colors"
-              title="Apri nel tuo client di posta predefinito"
+              title="Mailto"
             >
               <Send className="w-3 h-3" />
-              <span>Apri bozza email</span>
+              <span>{t.openMailto}</span>
             </a>
 
             <button
-              onClick={() => handleCopy(formatEmailBody(campaign.email_2_followup.body), 'e2-body', 'Corpo Email 2')}
+              onClick={() => handleCopy(formatEmailBody(email2Body), 'e2-body', 'Email 2')}
               className="px-3.5 py-1.5 rounded-lg bg-cyan-600/15 hover:bg-cyan-600/30 text-cyan-300 hover:text-cyan-200 border border-cyan-500/30 text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
             >
               {copiedId === 'e2-body' ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-emerald-300">Copiato!</span>
+                  <span className="text-emerald-300">{t.textCopiedBtn}</span>
                 </>
               ) : (
                 <>
                   <Copy className="w-3.5 h-3.5" />
-                  <span>Copia testo</span>
+                  <span>{t.copyTextBtn}</span>
                 </>
               )}
             </button>
@@ -312,15 +391,23 @@ ${formatEmailBody(campaign.email_2_followup.body)}
 
       {/* Footer Actions */}
       <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between gap-3">
-        <span className="text-[11px] text-slate-400">
-          Formato certificato: AIDA + Follow-up 3gg
-        </span>
+        <div className="flex items-center gap-2">
+          {isEditing && (
+            <button
+              onClick={resetToOriginal}
+              className="flex items-center gap-1 text-xs text-slate-400 hover:text-amber-400 transition-colors cursor-pointer"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Ripristina originale</span>
+            </button>
+          )}
+        </div>
         <button
           onClick={onExportMarkdown}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 text-xs font-medium transition-all"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 text-xs font-medium transition-all cursor-pointer"
         >
           <FileDown className="w-3.5 h-3.5" />
-          <span>Esporta Sequenza (.md)</span>
+          <span>{t.exportMarkdownBtn}</span>
         </button>
       </div>
     </div>

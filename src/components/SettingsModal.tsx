@@ -4,18 +4,16 @@ import {
   User,
   Building,
   Target,
-  Sparkles,
-  Sliders,
-  Volume2,
-  VolumeX,
   Palette,
-  Shield,
   Save,
   Check,
   RotateCcw,
+  Volume2,
+  Globe,
 } from 'lucide-react';
 import { UserSettings } from '../types';
 import { DEFAULT_SETTINGS } from '../utils/storage';
+import { Locale, TRANSLATIONS } from '../utils/i18n';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -33,19 +31,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onToast,
 }) => {
   const [form, setForm] = useState<UserSettings>({ ...settings });
+  const t = TRANSLATIONS[form.locale || 'it'];
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(form);
-    onToast('Profilo e preferenze salvati con successo');
+    onToast(t.saveBtn);
     onClose();
   };
 
   const handleReset = () => {
-    setForm({ ...DEFAULT_SETTINGS });
-    onToast('Impostazioni ripristinate ai valori predefiniti');
+    setForm({ ...DEFAULT_SETTINGS, locale: form.locale });
+    onToast(t.resetBtn);
   };
 
   return (
@@ -59,17 +58,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
             <div>
               <h2 className="text-base font-bold text-white tracking-tight">
-                Profilo Mittente & Strategia Outbound
+                {t.settingsTitle}
               </h2>
               <p className="text-xs text-slate-400">
-                Personalizza le variabili di generazione e le impostazioni dell'app
+                {t.settingsSubtitle}
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -77,17 +76,45 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+          {/* Section 0: UI Locale Language Selector */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+              <Globe className="w-3.5 h-3.5" />
+              Interface Language / Lingua / Langue
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'it', label: '🇮🇹 Italiano' },
+                { id: 'en', label: '🇬🇧 English' },
+                { id: 'fr', label: '🇫🇷 Français' },
+              ].map((loc) => (
+                <button
+                  key={loc.id}
+                  type="button"
+                  onClick={() => setForm({ ...form, locale: loc.id as Locale })}
+                  className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                    form.locale === loc.id
+                      ? 'border-indigo-500 bg-indigo-950/50 text-white shadow-md'
+                      : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {loc.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Section 1: Profilo Mittente */}
-          <div className="space-y-3.5">
+          <div className="space-y-3.5 pt-2 border-t border-slate-800/80">
             <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
               <Building className="w-3.5 h-3.5" />
-              1. Dati Mittente (Tu & La Tua Azienda)
+              {t.senderSection}
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Tuo Nome Completo
+                  {t.senderName}
                 </label>
                 <input
                   type="text"
@@ -100,7 +127,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <div>
                 <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Tua Azienda / Servizio
+                  {t.senderCompany}
                 </label>
                 <input
                   type="text"
@@ -117,13 +144,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="space-y-3.5 pt-2 border-t border-slate-800/80">
             <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
               <Target className="w-3.5 h-3.5" />
-              2. Parametri Outbound & Buyer Persona
+              {t.strategySection}
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Ruolo Target Predefinito
+                  {t.targetRole}
                 </label>
                 <select
                   value={form.targetRole}
@@ -141,17 +168,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <div>
                 <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Tono del Copywriting
+                  {t.copyTone}
                 </label>
                 <select
                   value={form.tone}
                   onChange={(e) => setForm({ ...form, tone: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-indigo-500/80"
                 >
-                  <option value="Assertivo Tech & Diretto ROI">Assertivo Tech & Diretto ROI</option>
-                  <option value="Consulenziale & Basato su Benchmark">Consulenziale & Basato su Benchmark</option>
-                  <option value="Ultra-Sintetico No-Nonsense">Ultra-Sintetico No-Nonsense</option>
-                  <option value="Provocatorio & Sfidante lo Status Quo">Provocatorio & Sfidante lo Status Quo</option>
+                  <option value="Assertivo Tech & Diretto ROI">Assertivo Tech & Diretto ROI (Assertive Tech)</option>
+                  <option value="Consulenziale & Basato su Benchmark">Consulenziale & Basato su Benchmark (Consultative)</option>
+                  <option value="Ultra-Sintetico No-Nonsense">Ultra-Sintetico No-Nonsense (Concise)</option>
+                  <option value="Provocatorio & Sfidante lo Status Quo">Provocatorio (Challenger)</option>
                 </select>
               </div>
             </div>
@@ -159,32 +186,33 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Stile Call To Action (CTA)
+                  {t.ctaStyle}
                 </label>
                 <select
                   value={form.ctaStyle}
                   onChange={(e) => setForm({ ...form, ctaStyle: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-indigo-500/80"
                 >
-                  <option value="Breve confronto conoscitivo di 10 minuti">Breve confronto di 10 minuti</option>
-                  <option value="Invio di un audit preliminare gratuito di 2 pagine">Invio di audit preliminare gratuito</option>
-                  <option value="Domanda aperta di qualificazione operativa">Domanda aperta di qualificazione</option>
-                  <option value="Condivisione di benchmark di settore">Condivisione di benchmark di settore</option>
+                  <option value="breve confronto conoscitivo di 10 minuti">10-minute discovery exchange</option>
+                  <option value="invio di un audit preliminare gratuito di 2 pagine">Free 2-page operational audit</option>
+                  <option value="domanda aperta di qualificazione operativa">Open qualifying question</option>
+                  <option value="condivisione di benchmark di settore">Industry benchmark comparison</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Lingua Output
+                  {t.outputLang}
                 </label>
                 <select
                   value={form.language}
                   onChange={(e) => setForm({ ...form, language: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-indigo-500/80"
                 >
-                  <option value="auto">Rilevamento Automatico dal testo</option>
-                  <option value="Italiano">Forza Italiano</option>
-                  <option value="English">Forza Inglese (US/UK B2B)</option>
+                  <option value="auto">Auto-detect from company text</option>
+                  <option value="Italiano">🇮🇹 Italiano</option>
+                  <option value="English">🇬🇧 English</option>
+                  <option value="Français">🇫🇷 Français</option>
                 </select>
               </div>
             </div>
@@ -194,15 +222,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="space-y-3.5 pt-2 border-t border-slate-800/80">
             <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
               <Palette className="w-3.5 h-3.5" />
-              3. Tema Visivo Personalizzabile & Preferenze
+              {t.appearanceSection}
             </h3>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {[
-                { id: 'dark', label: 'Dark Slate', desc: 'Predefinito' },
-                { id: 'midnight', label: 'Midnight Navy', desc: 'Blu notte profondo' },
-                { id: 'obsidian', label: 'Obsidian Pure', desc: 'Nero AMOLED' },
-                { id: 'light', label: 'Clean Light', desc: 'Luminoso minimale' },
+                { id: 'dark', label: 'Dark Slate', desc: 'Default' },
+                { id: 'midnight', label: 'Midnight Navy', desc: 'Deep Blue' },
+                { id: 'obsidian', label: 'Obsidian Pure', desc: 'Pure AMOLED' },
+                { id: 'light', label: 'Clean Light', desc: 'Minimal Light' },
               ].map((themeOpt) => {
                 const isSelected = form.theme === themeOpt.id;
                 return (
@@ -210,7 +238,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     key={themeOpt.id}
                     type="button"
                     onClick={() => setForm({ ...form, theme: themeOpt.id as any })}
-                    className={`p-3 rounded-xl border text-left transition-all ${
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                       isSelected
                         ? 'border-indigo-500 bg-indigo-950/40 text-white shadow-md'
                         : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:border-slate-700'
@@ -230,14 +258,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div className="flex items-center gap-2">
                 <Volume2 className="w-4 h-4 text-indigo-400" />
                 <span className="text-xs font-medium text-slate-200">
-                  Feedback sonoro per completamento e copia
+                  {t.soundFeedback}
                 </span>
               </div>
               <input
                 type="checkbox"
                 checked={form.soundEnabled}
                 onChange={(e) => setForm({ ...form, soundEnabled: e.target.checked })}
-                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 bg-slate-800 border-slate-700"
+                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 bg-slate-800 border-slate-700 cursor-pointer"
               />
             </div>
           </div>
@@ -247,26 +275,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <button
               type="button"
               onClick={handleReset}
-              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Ripristina Default</span>
+              <span>{t.resetBtn}</span>
             </button>
 
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors"
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
               >
-                Annulla
+                Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-indigo-600/30 transition-all active:scale-95"
+                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-indigo-600/30 transition-all active:scale-95 cursor-pointer"
               >
                 <Save className="w-3.5 h-3.5" />
-                <span>Salva Modifiche</span>
+                <span>{t.saveBtn}</span>
               </button>
             </div>
           </div>

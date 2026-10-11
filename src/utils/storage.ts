@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   tone: 'Assertivo Tech & Diretto ROI',
   ctaStyle: 'Breve confronto conoscitivo di 10 minuti',
   language: 'auto',
+  locale: 'it',
   theme: 'dark',
   soundEnabled: true,
   autoSave: true,

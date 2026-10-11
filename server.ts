@@ -166,11 +166,14 @@ ${ctaStyle ? `- Stile Call To Action desiderato: ${ctaStyle}` : ''}`;
     });
 
     const rawText = response.text || '';
+    if (!rawText) {
+      throw new Error('Nessuna risposta testuale generata dal modello Gemini.');
+    }
+
     let parsedData;
     try {
       parsedData = JSON.parse(rawText.trim());
     } catch {
-      // Fallback cleaner if raw output contains markdown wrapping
       const cleaned = rawText.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
       parsedData = JSON.parse(cleaned);
     }
@@ -187,130 +190,36 @@ ${ctaStyle ? `- Stile Call To Action desiderato: ${ctaStyle}` : ''}`;
       },
     });
   } catch (error: any) {
-    console.error('Error generating campaign with Gemini API:', error);
+    console.error('Gemini API Error:', error);
     const durationMs = Date.now() - startTime;
 
-    // Check if error is due to prepayment credits depleted (402), quota (429), or network
-    const isCreditOrQuotaError =
-      error?.status === 'RESOURCE_EXHAUSTED' ||
-      String(error?.message || '').includes('402') ||
-      String(error?.message || '').includes('prepayment') ||
-      String(error?.message || '').includes('RESOURCE_EXHAUSTED') ||
-      String(error?.message || '').includes('quota');
+    const errorMsg = String(error?.message || '');
+    let userFriendlyError = 'Si è verificato un errore durante la chiamata a Gemini API.';
+    let errorCode = error?.status || 'API_ERROR';
 
-    if (isCreditOrQuotaError) {
-      console.log('Utilizzo generatore euristico B2B fallback a causa di crediti/quota Gemini esauriti');
-      const fallbackData = generateHeuristicB2BCampaign({
-        companyText: req.body?.companyText || '',
-        senderName: req.body?.senderName,
-        senderCompany: req.body?.senderCompany,
-        targetRole: req.body?.targetRole,
-        tone: req.body?.tone,
-        ctaStyle: req.body?.ctaStyle,
-        language: req.body?.language,
-      });
-
-      return res.json({
-        success: true,
-        data: fallbackData,
-        metrics: {
-          latencyMs: durationMs,
-          model: 'leadpulse-b2b-engine (Fallback Quota)',
-          completedAt: new Date().toISOString(),
-          quotaNotice: 'Crediti Gemini temporaneamente esauriti: analisi sintetizzata tramite motore euristico B2B integrato.',
-        },
-      });
+    if (errorMsg.includes('402') || errorMsg.includes('prepayment') || error?.status === 'RESOURCE_EXHAUSTED') {
+      errorCode = 'CREDITS_EXHAUSTED';
+      userFriendlyError = 'Crediti di pre-pagamento API Gemini esauriti per questo progetto. Ricarica i crediti o gestisci la fatturazione su Google AI Studio (https://ai.studio/projects).';
+    } else if (errorMsg.includes('429') || errorMsg.includes('quota') || errorMsg.includes('RATE_LIMIT')) {
+      errorCode = 'RATE_LIMITED';
+      userFriendlyError = 'Limite di richieste (rate-limit) raggiunto. Attendi qualche istante e riprova.';
+    } else if (errorMsg.includes('401') || errorMsg.includes('API_KEY_INVALID')) {
+      errorCode = 'INVALID_API_KEY';
+      userFriendlyError = 'Chiave API Gemini non valida o scaduta.';
+    } else if (errorMsg) {
+      userFriendlyError = errorMsg;
     }
 
     return res.status(500).json({
       success: false,
-      error: error?.message || 'Si è verificato un errore durante la generazione della campagna.',
+      error: userFriendlyError,
+      errorCode,
       metrics: {
         latencyMs: durationMs,
       },
     });
   }
 });
-
-// Heuristic B2B Sales Intelligence Generator
-function generateHeuristicB2BCampaign(params: {
-  companyText: string;
-  senderName?: string;
-  senderCompany?: string;
-  targetRole?: string;
-  tone?: string;
-  ctaStyle?: string;
-  language?: string;
-}) {
-  const { companyText, senderName = 'Marco Rossi', senderCompany = 'OmniGrowth B2B', targetRole = 'VP Operations', ctaStyle = 'breve confronto di 10 minuti' } = params;
-  const lower = companyText.toLowerCase();
-
-  let coreBusiness = 'Piattaforma Enterprise SaaS & Servizi Tecnologici B2B';
-  let valueProp = 'Automazione dei processi operativi chiave e riduzione del carico manuale per massimizzare la scalabilità del team.';
-  let pains = [
-    'Frammentazione dei dati operativi e dipendenza da processi manuali soggetti a errore umano.',
-    "Difficoltà di scalare il volume d'affari senza aumentare proporzionalmente l'headcount amministrativo.",
-    'Mancanza di visibilità in tempo reale sui colli di bottiglia e metriche di produttività dei reparti.',
-  ];
-
-  if (lower.includes('fintech') || lower.includes('banca') || lower.includes('cassa') || lower.includes('cfo') || lower.includes('pagament')) {
-    coreBusiness = 'SaaS FinTech B2B per automazione contabile, riconciliazione e gestione della liquidità';
-    valueProp = 'Automatizza la riconciliazione bancaria multilivello e riduce i tempi di chiusura mensile per CFO e team finance.';
-    pains = [
-      'Tempi di chiusura finanziaria mensile prolungati con oltre 20 ore a settimana perse in riconciliazioni manuali.',
-      'DSO (Days Sales Outstanding) elevato e ritardi nei flussi di cassa dovuti a solleciti di pagamento disorganizzati.',
-      'Rischio di errori contabili e disallineamenti tra gateway di pagamento ed ERP aziendale.',
-    ];
-  } else if (lower.includes('logistic') || lower.includes('flott') || lower.includes('trasport') || lower.includes('iot') || lower.includes('camion')) {
-    coreBusiness = 'Soluzioni telematiche IoT e software di ottimizzazione logistica per flotte di trasporto merci';
-    valueProp = 'Ottimizza i percorsi di distribuzione e monitora consumi ed emissioni per ridurre i costi operativi della flotta.';
-    pains = [
-      'Costi di carburante e manutenzione non ottimizzati a causa di percorsi inefficienti e soste non pianificate.',
-      'Mancanza di integrazione bidirezionale tra telematica di bordo e sistemi ERP / WMS centrali.',
-      'Rischio di penali contrattuali e perdita di clienti per ritardi imprevisti nelle finestre di scarico.',
-    ];
-  } else if (lower.includes('hr') || lower.includes('talent') || lower.includes('risorse umane') || lower.includes('recruiting') || lower.includes('skill')) {
-    coreBusiness = 'Enterprise HR Tech SaaS per talent mapping, internal mobility e upskilling';
-    valueProp = 'Mappa le competenze interne della forza lavoro e riduce il turnover volontario attraverso percorsi di crescita guidati.';
-    pains = [
-      'Turnover elevato di figure tecniche senior causato da mancanza di visibilità sui percorsi di carriera interni.',
-      'Silos informativi tra i dipartimenti aziendali con dispersione del know-how strategico.',
-      'Basso tasso di adozione e completamento dei programmi di formazione aziendali tradizionali.',
-    ];
-  } else if (lower.includes('cyber') || lower.includes('sicurezza') || lower.includes('zero-trust') || lower.includes('gdpr') || lower.includes('nis2')) {
-    coreBusiness = 'Soluzione SaaS di Identity & Access Management (IAM) e conformità normativa europea';
-    valueProp = 'Protegge accessi privilegiati a server e cloud riducendo il rischio di data breach e garantendo conformità NIS2.';
-    pains = [
-      'Visibilità carente sulle credenziali privilegiate assegnate a collaboratori e fornitori terzi.',
-      'Rischio di sanzioni severe per mancato adeguamento ai requisiti stringenti di NIS2 e GDPR.',
-      'Tempi di risposta lunghi nella revoca degli accessi critici al termine delle collaborazioni.',
-    ];
-  }
-
-  const subject1 = 'Ottimizzazione processi e ROI operativo';
-  const body1 = `Ciao [Nome Lead],\n\nHo analizzato con interesse il modello operativo della vostra azienda e il modo in cui gestite la vostra value proposition nel settore.\n\nMolte realtà simili alla vostra riscontrano spesso una forte frizione legata a: "${pains[0]}".\n\nIn ${senderCompany} abbiamo strutturato un framework specifico per risolvere questo collo di bottiglia, consentendo ai team di tagliare i tempi morti operativi di oltre il 35% senza stravolgere i software già in uso.\n\nSaresti aperto a un ${ctaStyle} giovedì per valutare insieme se ha senso per la vostra roadmap?\n\nCordiali saluti,\n${senderName}`;
-
-  const subject2 = 'Re: Ottimizzazione processi e ROI operativo';
-  const body2 = `Ciao [Nome Lead],\n\nRiprendo brevemente la mia nota precedente.\n\nDi recente un'azienda comparabile alla vostra ha affrontato il problema di "${pains[1]}". Implementando il nostro approccio, hanno azzerato gli errori manuali e ottenuto un ritorno sull'investimento entro 45 giorni.\n\nPossiamo condividere un breve documento di benchmark operativo. Ha senso per te un rapido scambio di 5 minuti in settimana?\n\nUn saluto,\n${senderName}`;
-
-  return {
-    company_analysis: {
-      core_business: coreBusiness,
-      value_proposition: valueProp,
-      detected_pains: pains,
-    },
-    email_campaign: {
-      email_1_hook: {
-        subject: subject1,
-        body: body1,
-      },
-      email_2_followup: {
-        subject: subject2,
-        body: body2,
-      },
-    },
-  };
-}
 
 // Start Express server and connect Vite in development
 async function startServer() {

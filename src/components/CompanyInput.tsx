@@ -6,11 +6,11 @@ import {
   Sparkles,
   Target,
   Layers,
-  HelpCircle,
   FileText,
 } from 'lucide-react';
-import { PRESET_COMPANIES } from '../utils/presets';
+import { PRESET_COMPANIES_BY_LOCALE } from '../utils/presets';
 import { UserSettings } from '../types';
+import { TRANSLATIONS } from '../utils/i18n';
 
 interface CompanyInputProps {
   inputText: string;
@@ -30,6 +30,8 @@ export const CompanyInput: React.FC<CompanyInputProps> = ({
   onSelectPreset,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const t = TRANSLATIONS[settings.locale || 'it'];
+  const activePresets = PRESET_COMPANIES_BY_LOCALE[settings.locale || 'it'] || PRESET_COMPANIES_BY_LOCALE.it;
 
   // Auto-resize or focus
   useEffect(() => {
@@ -55,9 +57,9 @@ export const CompanyInput: React.FC<CompanyInputProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-4 border-b border-slate-800/80">
         <div className="flex items-center gap-2 text-sm text-slate-200 font-semibold">
           <Building2 className="w-4 h-4 text-indigo-400" />
-          <span>Informazioni Azienda Target</span>
+          <span>{t.inputTitle}</span>
           <span className="text-xs font-normal text-slate-400">
-            (Incolla testo dal sito web, landing page o profilo LinkedIn)
+            {t.inputSubtitle}
           </span>
         </div>
 
@@ -65,14 +67,14 @@ export const CompanyInput: React.FC<CompanyInputProps> = ({
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-xs text-slate-400 flex items-center gap-1 mr-1">
             <Sparkles className="w-3 h-3 text-amber-400" />
-            Preset di prova:
+            {t.presetsLabel}
           </span>
-          {PRESET_COMPANIES.map((preset) => (
+          {activePresets.map((preset) => (
             <button
               key={preset.id}
               onClick={() => onSelectPreset(preset.id)}
               disabled={isGenerating}
-              className="px-2.5 py-1 text-xs rounded-lg bg-slate-800/90 hover:bg-indigo-600/20 text-slate-300 hover:text-indigo-200 border border-slate-700/60 hover:border-indigo-500/50 transition-all font-medium whitespace-nowrap active:scale-95"
+              className="px-2.5 py-1 text-xs rounded-lg bg-slate-800/90 hover:bg-indigo-600/20 text-slate-300 hover:text-indigo-200 border border-slate-700/60 hover:border-indigo-500/50 transition-all font-medium whitespace-nowrap active:scale-95 cursor-pointer"
               title={preset.shortDesc}
             >
               {preset.title}
@@ -88,7 +90,7 @@ export const CompanyInput: React.FC<CompanyInputProps> = ({
           value={inputText}
           onChange={(e) => onInputChange(e.target.value)}
           disabled={isGenerating}
-          placeholder="Esempio: Incolla qui il testo aziendale target (es. chi sono, proposta di valore, servizi offerti, landing page o descrizione di business)..."
+          placeholder={t.inputPlaceholder}
           rows={5}
           className="w-full px-4 py-3 bg-slate-950/80 border border-slate-800 focus:border-indigo-500/80 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all font-sans text-sm resize-y leading-relaxed"
         />
@@ -97,11 +99,11 @@ export const CompanyInput: React.FC<CompanyInputProps> = ({
         <div className="flex items-center justify-between text-xs text-slate-500 px-1 pt-2">
           <div className="flex items-center gap-3">
             <span>
-              {wordCount} {wordCount === 1 ? 'parola' : 'parole'} • {charCount} caratteri
+              {wordCount} {t.wordsLabel} • {charCount} {t.charsLabel}
             </span>
             {!isValid && inputText.trim().length > 0 && (
               <span className="text-amber-400/90 text-[11px]">
-                Consigliati almeno 20 caratteri per un'analisi approfondita
+                {t.minCharsWarning}
               </span>
             )}
           </div>
@@ -109,11 +111,11 @@ export const CompanyInput: React.FC<CompanyInputProps> = ({
           {inputText && !isGenerating && (
             <button
               onClick={() => onInputChange('')}
-              className="flex items-center gap-1 text-slate-400 hover:text-rose-400 transition-colors text-xs"
-              title="Cancella testo inserito"
+              className="flex items-center gap-1 text-slate-400 hover:text-rose-400 transition-colors text-xs cursor-pointer"
+              title={t.clearBtn}
             >
               <Trash2 className="w-3 h-3" />
-              <span>Pulisci</span>
+              <span>{t.clearBtn}</span>
             </button>
           )}
         </div>
@@ -124,19 +126,19 @@ export const CompanyInput: React.FC<CompanyInputProps> = ({
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 border border-slate-700/60">
             <Target className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="text-slate-400">Target Persona:</span>
+            <span className="text-slate-400">{t.targetRoleLabel}</span>
             <span className="font-medium text-slate-200">{settings.targetRole}</span>
           </div>
 
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 border border-slate-700/60">
             <Layers className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="text-slate-400">Tono:</span>
+            <span className="text-slate-400">{t.toneLabel}</span>
             <span className="font-medium text-slate-200">{settings.tone}</span>
           </div>
 
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 border border-slate-700/60 hidden lg:flex">
             <FileText className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-slate-400">CTA:</span>
+            <span className="text-slate-400">{t.ctaLabel}</span>
             <span className="font-medium text-slate-200 truncate max-w-[200px]">{settings.ctaStyle}</span>
           </div>
         </div>
@@ -144,7 +146,7 @@ export const CompanyInput: React.FC<CompanyInputProps> = ({
         {/* Submit Button */}
         <div className="flex items-center gap-3">
           <span className="text-[11px] text-slate-500 hidden sm:inline-block font-mono">
-            Ctrl + Invio
+            Ctrl + Enter
           </span>
           <button
             onClick={onGenerate}
@@ -158,12 +160,12 @@ export const CompanyInput: React.FC<CompanyInputProps> = ({
             {isGenerating ? (
               <>
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Analisi & Generazione in corso...</span>
+                <span>{t.generatingBtn}</span>
               </>
             ) : (
               <>
                 <Send className="w-4 h-4" />
-                <span>Genera Campagna</span>
+                <span>{t.generateBtn}</span>
               </>
             )}
           </button>

@@ -1,19 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
   Sparkles,
-  Zap,
   Building2,
-  Mail,
   ShieldCheck,
-  CheckCircle2,
-  AlertCircle,
-  FileText,
   Clock,
-  Wifi,
   WifiOff,
-  Share2,
-  ArrowRight,
-  RefreshCw,
+  AlertTriangle,
+  RotateCcw,
+  ExternalLink,
+  HelpCircle,
 } from 'lucide-react';
 import {
   GeneratedCampaignData,
@@ -28,8 +23,9 @@ import { AnalysisCard } from './components/AnalysisCard';
 import { EmailSequenceCard } from './components/EmailSequenceCard';
 import { SessionsDrawer } from './components/SessionsDrawer';
 import { SettingsModal } from './components/SettingsModal';
+import { RecruiterModal } from './components/RecruiterModal';
 import { ToastContainer, ToastItem } from './components/Toast';
-import { PRESET_COMPANIES } from './utils/presets';
+import { PRESET_COMPANIES_BY_LOCALE } from './utils/presets';
 import {
   loadSettings,
   saveSettings,
@@ -43,6 +39,13 @@ import {
   extractCompanyName,
 } from './utils/storage';
 import { playSuccessChime } from './utils/audio';
+import { TRANSLATIONS } from './utils/i18n';
+
+interface ApiErrorState {
+  message: string;
+  code?: string;
+  timestamp: string;
+}
 
 export default function App() {
   const [settings, setSettings] = useState<UserSettings>(loadSettings);
@@ -51,24 +54,28 @@ export default function App() {
 
   const [inputText, setInputText] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [apiError, setApiError] = useState<ApiErrorState | null>(null);
   const [currentCampaign, setCurrentCampaign] = useState<GeneratedCampaignData | null>(null);
   const [currentMetrics, setCurrentMetrics] = useState<GenerationMetrics | null>(null);
   const [currentCompanyName, setCurrentCompanyName] = useState<string>('');
 
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [isRecruiterModalOpen, setIsRecruiterModalOpen] = useState<boolean>(false);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+
+  const t = TRANSLATIONS[settings.locale || 'it'];
 
   // Monitor online status
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      addToast('Connessione ripristinata', 'info');
+      addToast(settings.locale === 'it' ? 'Connessione ripristinata' : settings.locale === 'fr' ? 'Connexion rétablie' : 'Connection restored', 'info');
     };
     const handleOffline = () => {
       setIsOnline(false);
-      addToast('Modalità offline attiva: i dati rimangono disponibili in locale', 'info');
+      addToast(t.offlineNotice, 'info');
     };
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -76,7 +83,7 @@ export default function App() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+  }, [t.offlineNotice, settings.locale]);
 
   // Update HTML document class for theme
   useEffect(() => {
@@ -106,25 +113,28 @@ export default function App() {
   };
 
   const handleSelectPreset = (presetId: string) => {
-    const found = PRESET_COMPANIES.find((p) => p.id === presetId);
+    const presetsList = PRESET_COMPANIES_BY_LOCALE[settings.locale || 'it'] || PRESET_COMPANIES_BY_LOCALE.it;
+    const found = presetsList.find((p) => p.id === presetId);
     if (found) {
       setInputText(found.content);
-      addToast(`Caricato preset: ${found.title}`, 'info');
+      setApiError(null);
+      addToast(`Preset: ${found.title}`, 'info');
     }
   };
 
   const handleGenerate = async () => {
     if (!inputText.trim()) {
-      addToast('Inserisci il testo aziendale per avviare l\'analisi', 'error');
+      addToast(settings.locale === 'it' ? 'Inserisci il testo aziendale per continuare' : 'Please provide company text', 'error');
       return;
     }
 
     if (!isOnline) {
-      addToast('Connessione internet assente. Riconnettiti per contattare l\'API Gemini.', 'error');
+      addToast(t.offlineNotice, 'error');
       return;
     }
 
     setIsGenerating(true);
+    setApiError(null);
     const startMs = Date.now();
 
     try {
@@ -138,14 +148,19 @@ export default function App() {
           targetRole: settings.targetRole,
           tone: settings.tone,
           ctaStyle: settings.ctaStyle,
-          language: settings.language,
+          language: settings.language !== 'auto' ? settings.language : settings.locale,
         }),
       });
 
       const json = await response.json();
 
       if (!response.ok || !json.success) {
-        throw new Error(json.error || 'Errore durante l\'elaborazione della campagna.');
+        setApiError({
+          message: json.error || 'Errore durante la chiamata API di generazione.',
+          code: json.errorCode || String(response.status),
+          timestamp: new Date().toLocaleTimeString(),
+        });
+        throw new Error(json.error || 'Errore durante la chiamata API di generazione.');
       }
 
       const campaignData: GeneratedCampaignData = json.data;
@@ -159,6 +174,7 @@ export default function App() {
       setCurrentCompanyName(extractedName);
       setCurrentCampaign(campaignData);
       setCurrentMetrics(metrics);
+      setApiError(null);
 
       // Auto-save session
       if (settings.autoSave) {
@@ -179,10 +195,10 @@ export default function App() {
         playSuccessChime();
       }
 
-      addToast(`Campagna generata con successo (${metrics.latencyMs}ms)`, 'success');
+      addToast(`${t.completedStatus} (${metrics.latencyMs}ms)`, 'success');
     } catch (err: any) {
       console.error('Generazione fallita:', err);
-      addToast(err?.message || 'Errore durante la generazione della campagna.', 'error');
+      addToast(err?.message || 'Errore di generazione.', 'error');
     } finally {
       setIsGenerating(false);
     }
@@ -194,7 +210,8 @@ export default function App() {
     setCurrentCampaign(session.data);
     setCurrentMetrics(session.metrics);
     setCurrentCompanyName(session.companyName);
-    addToast(`Caricata sessione: ${session.companyName}`, 'info');
+    setApiError(null);
+    addToast(`Loaded: ${session.companyName}`, 'info');
   };
 
   const handleDeleteSession = (id: string) => {
@@ -203,7 +220,7 @@ export default function App() {
     if (activeSessionId === id) {
       setActiveSessionId(null);
     }
-    addToast('Sessione rimossa dall\'archivio', 'info');
+    addToast('Session removed', 'info');
   };
 
   const handleToggleFavorite = (id: string) => {
@@ -221,7 +238,7 @@ export default function App() {
     if (!currentCampaign) return;
     const sessionObj: SessionRecord = {
       id: activeSessionId || 'export',
-      companyName: currentCompanyName || 'Azienda Target',
+      companyName: currentCompanyName || 'Target Company',
       inputText,
       data: currentCampaign,
       metrics: currentMetrics || {
@@ -234,7 +251,7 @@ export default function App() {
     const md = exportCampaignAsMarkdown(sessionObj);
     const date = new Date().toISOString().slice(0, 10);
     downloadFile(md, `leadpulse_${currentCompanyName.replace(/\s+/g, '_')}_${date}.md`, 'text/markdown');
-    addToast('Sequenza esportata in formato Markdown', 'success');
+    addToast('Markdown export downloaded', 'success');
   };
 
   // Determine root theme container background
@@ -260,6 +277,7 @@ export default function App() {
         onUpdateSettings={handleUpdateSettings}
         onOpenDrawer={() => setIsDrawerOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenRecruiterModal={() => setIsRecruiterModalOpen(true)}
         sessionCount={sessions.length}
         isGenerating={isGenerating}
       />
@@ -271,9 +289,9 @@ export default function App() {
           <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-medium animate-fadeIn">
             <div className="flex items-center gap-2">
               <WifiOff className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>Modalità Offline: Connessione di rete non rilevata. Puoi visualizzare e gestire le sessioni già salvate.</span>
+              <span>{t.offlineNotice}</span>
             </div>
-            <span className="font-mono text-[11px] text-amber-400/80">Locale OK</span>
+            <span className="font-mono text-[11px] text-amber-400/80">Offline</span>
           </div>
         )}
 
@@ -281,21 +299,24 @@ export default function App() {
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold tracking-wide uppercase">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>B2B Sales Intelligence & Outbound Sequences</span>
+            <span>{t.badgeAi}</span>
           </div>
           <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
-            Genera Sequenze Outbound Iper-Personalizzate in Pochi Secondi
+            {t.heroTitle}
           </h1>
           <p className="text-sm sm:text-base text-slate-400 leading-relaxed max-w-2xl mx-auto">
-            Incolla la descrizione di un'azienda target. LeadPulse analizzerà il loro modello di business, identificherà i <strong className="text-slate-200">Pain Points</strong> critici e genererà una sequenza email a due step (<strong className="text-slate-200">Hook AIDA</strong> + <strong className="text-slate-200">Follow-up a 3gg</strong>) ad altissimo tasso di conversione.
+            {t.heroDesc}
           </p>
         </div>
 
         {/* Input Section */}
-        <section aria-label="Input Azienda Target">
+        <section aria-label="Target Company Input">
           <CompanyInput
             inputText={inputText}
-            onInputChange={setInputText}
+            onInputChange={(txt) => {
+              setInputText(txt);
+              if (apiError) setApiError(null);
+            }}
             onGenerate={handleGenerate}
             isGenerating={isGenerating}
             settings={settings}
@@ -305,13 +326,65 @@ export default function App() {
 
         {/* Loading Progress Bar */}
         {isGenerating && (
-          <section aria-label="Avanzamento Elaborazione">
-            <ProgressBar isGenerating={isGenerating} />
+          <section aria-label="Processing Progress">
+            <ProgressBar isGenerating={isGenerating} locale={settings.locale} />
           </section>
         )}
 
+        {/* API Error Diagnostic Card */}
+        {apiError && !isGenerating && (
+          <div className="p-5 rounded-2xl bg-rose-950/40 border border-rose-800/80 text-rose-100 shadow-xl backdrop-blur-sm animate-fadeIn space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-300 shrink-0 mt-0.5">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-white">
+                      Risposta API Gemini: {apiError.code || 'Errore di Rete / Quota'}
+                    </h3>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-900/60 text-rose-300 font-mono">
+                      {apiError.timestamp}
+                    </span>
+                  </div>
+                  <p className="text-xs text-rose-200 mt-1 leading-relaxed">
+                    {apiError.message}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleGenerate}
+                className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 shrink-0 cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Riprova</span>
+              </button>
+            </div>
+
+            {apiError.code === 'CREDITS_EXHAUSTED' && (
+              <div className="mt-2 pt-2 border-t border-rose-900/50 flex flex-wrap items-center justify-between gap-2 text-xs text-rose-300">
+                <span className="flex items-center gap-1">
+                  <HelpCircle className="w-3.5 h-3.5" />
+                  Puoi gestire i crediti prepagati o il piano del tuo account su Google AI Studio:
+                </span>
+                <a
+                  href="https://ai.studio/projects"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline hover:text-white flex items-center gap-1 font-semibold"
+                >
+                  <span>ai.studio/projects</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Request Status Indicator & Metrics */}
-        {currentMetrics && !isGenerating && (
+        {currentMetrics && !isGenerating && !apiError && (
           <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-300 shadow-sm animate-fadeIn">
             <div className="flex items-center gap-2">
               <span className="flex h-2 w-2 relative">
@@ -319,21 +392,21 @@ export default function App() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
               <span className="font-semibold text-white">
-                Richiesta Completata con Successo
+                {t.completedStatus}
               </span>
               <span className="text-slate-500">•</span>
               <span className="text-slate-400">
-                Azienda: <strong className="text-slate-200">{currentCompanyName || 'Target Company'}</strong>
+                {currentCompanyName || 'Target Company'}
               </span>
             </div>
 
             <div className="flex items-center gap-4 text-slate-400 font-mono text-[11px]">
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3 text-slate-500" />
-                Latenza: <strong className="text-indigo-400">{currentMetrics.latencyMs}ms</strong>
+                {t.latencyLabel} <strong className="text-indigo-400">{currentMetrics.latencyMs}ms</strong>
               </span>
               <span>Modello: {currentMetrics.model}</span>
-              <span className="hidden sm:inline text-emerald-400 font-medium">✓ Salvato in Locale</span>
+              <span className="hidden sm:inline text-emerald-400 font-medium">{t.savedLocal}</span>
             </div>
           </div>
         )}
@@ -348,6 +421,7 @@ export default function App() {
                 metrics={currentMetrics || undefined}
                 companyName={currentCompanyName}
                 soundEnabled={settings.soundEnabled}
+                locale={settings.locale}
                 onToast={addToast}
               />
             </div>
@@ -366,23 +440,29 @@ export default function App() {
         )}
 
         {/* Empty State Showcase when no campaign generated yet */}
-        {!currentCampaign && !isGenerating && (
+        {!currentCampaign && !isGenerating && !apiError && (
           <div className="p-8 sm:p-12 rounded-2xl border border-slate-800/80 bg-slate-900/40 text-center max-w-2xl mx-auto space-y-4">
             <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto text-indigo-400">
               <Building2 className="w-7 h-7" />
             </div>
-            <h3 className="text-lg font-bold text-white">Nessuna analisi attiva al momento</h3>
+            <h3 className="text-lg font-bold text-white">
+              {settings.locale === 'it' ? 'Nessuna analisi attiva al momento' : settings.locale === 'fr' ? 'Aucune analyse active pour le moment' : 'No active campaign analysis'}
+            </h3>
             <p className="text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
-              Incolla il testo del sito web della tua azienda target oppure seleziona uno dei preset di prova in alto per generare istantaneamente la Sales Intelligence e le email di vendita.
+              {settings.locale === 'it' 
+                ? 'Incolla il testo del sito web della tua azienda target oppure seleziona uno dei preset di prova in alto per generare istantaneamente la Sales Intelligence e le email di vendita.'
+                : settings.locale === 'fr'
+                ? 'Collez le texte du site web de votre entreprise cible ou sélectionnez un exemple en haut pour générer la Sales Intelligence et vos e-mails de prospection.'
+                : 'Paste your target company website description or pick one of the sample presets above to generate instant sales intelligence and email sequences.'}
             </p>
             <div className="pt-2 flex flex-wrap justify-center gap-2">
-              {PRESET_COMPANIES.slice(0, 2).map((p) => (
+              {(PRESET_COMPANIES_BY_LOCALE[settings.locale || 'it'] || PRESET_COMPANIES_BY_LOCALE.it).slice(0, 2).map((p) => (
                 <button
                   key={p.id}
                   onClick={() => handleSelectPreset(p.id)}
-                  className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700/60 transition-colors"
+                  className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700/60 transition-colors cursor-pointer"
                 >
-                  Prova con {p.title}
+                  {p.title} ({p.category})
                 </button>
               ))}
             </div>
@@ -394,17 +474,17 @@ export default function App() {
       <footer className="border-t border-slate-800/80 bg-slate-950/80 mt-12 py-6 text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-400">LeadPulse AI</span>
-            <span>• B2B Sales Intelligence Outbound Engine</span>
+            <span className="font-bold text-slate-400">LeadPulse B2B</span>
+            <span>• Sales Intelligence & Outbound Sequences</span>
           </div>
 
           <div className="flex items-center gap-4 text-[11px]">
             <span className="flex items-center gap-1 text-slate-400">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              Crittografia Locale & Privacy E2E
+              Local Encryption & Zero Tracker
             </span>
+            <span>🇮🇹 / 🇬🇧 / 🇫🇷 Multi-language Support</span>
             <span>Gemini 3.8 Flash SDK</span>
-            <span>Framework AIDA</span>
           </div>
         </div>
       </footer>
@@ -415,6 +495,7 @@ export default function App() {
         onClose={() => setIsDrawerOpen(false)}
         sessions={sessions}
         activeSessionId={activeSessionId}
+        locale={settings.locale}
         onSelectSession={handleSelectSession}
         onDeleteSession={handleDeleteSession}
         onToggleFavorite={handleToggleFavorite}
@@ -432,6 +513,13 @@ export default function App() {
           saveSettings(newSettings);
         }}
         onToast={addToast}
+      />
+
+      {/* Recruiter & HR Candidate Showcase Modal */}
+      <RecruiterModal
+        isOpen={isRecruiterModalOpen}
+        onClose={() => setIsRecruiterModalOpen(false)}
+        locale={settings.locale}
       />
 
       {/* Floating Notifications */}
