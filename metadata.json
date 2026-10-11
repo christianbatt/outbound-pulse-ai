@@ -1,0 +1,6 @@
+{
+  "name": "LeadPulse AI - B2B Sales Intelligence",
+  "description": "Piattaforma di Sales Intelligence Outbound per analisi target company e generazione sequenze email AIDA ad alta conversione.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
