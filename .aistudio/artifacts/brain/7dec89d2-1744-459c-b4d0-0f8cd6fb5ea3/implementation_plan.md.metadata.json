@@ -1,0 +1,6 @@
+{
+  "summary":  "Piano d'implementazione per la trasformazione di OutboundPulse in un motore di Sales Intelligence e analisi punti deboli B2B reale al 100%. Il piano include:\n1. Web Scraping in tempo reale dell'URL dell'azienda target sul server.\n2. Google Search Grounding con Gemini per arricchire la conoscenza di mercato, notizie recenti e concorrenza.\n3. Prompting avanzato di Business Analysis B2B con diagnosi approfondita in 4-5 punti di dolore categorizzati (Operativo, Tecnologico, Commerciale, Riconciliazione/Scalabilità) ed evidenza SWOT.\n4. Input dedicato URL con bottone di estrazione istantanea, badge di status live e visualizzazione delle fonti analizzate.\n5. Architettura di fallback robusta che preserva Cerebras e Grok.",
+  "updatedAt":  "2026-10-12T07:56:05.221066963Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

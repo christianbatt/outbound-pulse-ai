@@ -29,6 +29,12 @@ export interface Translations {
   targetRoleLabel: string;
   toneLabel: string;
   ctaLabel: string;
+  urlInputLabel: string;
+  urlInputPlaceholder: string;
+  urlScrapeBtn: string;
+  urlScrapingBtn: string;
+  urlScrapedSuccess: string;
+  webGroundingBadge: string;
   
   // Progress bar
   progressStages: [string, string, string, string];
@@ -113,8 +119,8 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
     badgeAi: 'B2B Sales Intelligence',
     heroTitle: 'Genera Sequenze Outbound Iper-Personalizzate in Pochi Secondi',
     heroDesc: "Incolla la descrizione di un'azienda target. LeadPulse analizzerà il loro modello di business, identificherà i Pain Points critici e genererà una sequenza email a due step (Hook AIDA + Follow-up a 3gg) ad altissimo tasso di conversione.",
-    candidateBadge: 'Portfolio Project • Christian Battistoni — Senior Full-Stack Engineer',
-    recruiterBtn: 'Profilo Candidato / HR',
+    candidateBadge: 'Portfolio • Christian Battistoni — AI Orchestrator & Vibe Coder',
+    recruiterBtn: 'Profilo & Competenze AI',
     engineStatus: 'Motore: Gemini 3.8 Flash',
     sessionsBtn: 'Sessioni',
     settingsBtn: 'Impostazioni & Profilo',
@@ -135,6 +141,12 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
     targetRoleLabel: 'Target Persona:',
     toneLabel: 'Tono:',
     ctaLabel: 'CTA:',
+    urlInputLabel: 'Estrai da Sito Web / URL Target:',
+    urlInputPlaceholder: 'https://azienda-target.com',
+    urlScrapeBtn: 'Estrai Dati Sito',
+    urlScrapingBtn: 'Scraping in corso...',
+    urlScrapedSuccess: 'Dati estratti con successo dal sito web!',
+    webGroundingBadge: 'Google Search Grounding & Web Scraping Attivi',
     
     progressStages: [
       'Analisi Core Business & Mercato Target',
@@ -217,8 +229,8 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
     badgeAi: 'B2B Sales Intelligence Engine',
     heroTitle: 'Generate Hyper-Personalized Outbound Email Sequences in Seconds',
     heroDesc: 'Paste any target company description or website copy. LeadPulse extracts core business models, detects operational pain points, and crafts a proven 2-step outbound sequence (AIDA Hook + 3-day Follow-up) tailored to your buyer persona.',
-    candidateBadge: 'Portfolio Project • Christian Battistoni — Senior Full-Stack Engineer',
-    recruiterBtn: 'Recruiter / HR Info',
+    candidateBadge: 'Portfolio • Christian Battistoni — AI Orchestrator & Vibe Coder',
+    recruiterBtn: 'AI Orchestrator Profile',
     engineStatus: 'Engine: Gemini 3.8 Flash',
     sessionsBtn: 'Sessions',
     settingsBtn: 'Settings & Profile',
@@ -239,6 +251,12 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
     targetRoleLabel: 'Target Persona:',
     toneLabel: 'Tone:',
     ctaLabel: 'CTA:',
+    urlInputLabel: 'Extract from Target Website / URL:',
+    urlInputPlaceholder: 'https://target-company.com',
+    urlScrapeBtn: 'Extract Site Data',
+    urlScrapingBtn: 'Scraping live website...',
+    urlScrapedSuccess: 'Website intelligence extracted successfully!',
+    webGroundingBadge: 'Google Search Grounding & Web Scraping Active',
     
     progressStages: [
       'Core Business & Market Segmentation Analysis',
@@ -321,8 +339,8 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
     badgeAi: 'Moteur de Sales Intelligence B2B',
     heroTitle: 'Générez des Séquences d’E-mails Outbound Ultra-Personnalisées',
     heroDesc: 'Collez le texte ou la page de présentation d’une entreprise cible. LeadPulse analyse son modèle économique, isole ses points de friction critiques et rédige une séquence en 2 étapes (Accroche AIDA + Relance à 3j) axée sur le ROI.',
-    candidateBadge: 'Projet Portfolio • Christian Battistoni — Senior Full-Stack Engineer',
-    recruiterBtn: 'Profil Candidat / RH',
+    candidateBadge: 'Portfolio • Christian Battistoni — AI Orchestrator & Vibe Coder',
+    recruiterBtn: 'Profil AI Orchestrator',
     engineStatus: 'Moteur: Gemini 3.8 Flash',
     sessionsBtn: 'Sessions',
     settingsBtn: 'Paramètres & Profil',
@@ -343,6 +361,12 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
     targetRoleLabel: 'Profil Cible :',
     toneLabel: 'Ton :',
     ctaLabel: 'CTA :',
+    urlInputLabel: 'Extraire depuis l’URL / Site Web Cible :',
+    urlInputPlaceholder: 'https://entreprise-cible.com',
+    urlScrapeBtn: 'Extraire Données Site',
+    urlScrapingBtn: 'Scraping en cours...',
+    urlScrapedSuccess: 'Données extraites avec succès du site web !',
+    webGroundingBadge: 'Google Search Grounding & Web Scraping Actifs',
     
     progressStages: [
       'Analyse du Modèle d’Affaires & Segmentation Marché',

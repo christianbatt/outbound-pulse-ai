@@ -15,6 +15,9 @@ export const DEFAULT_SETTINGS: UserSettings = {
   soundEnabled: true,
   autoSave: true,
   recipientName: 'Alex',
+  preferredProvider: 'auto',
+  cerebrasApiKey: '',
+  grokApiKey: '',
 };
 
 // --- Settings Management ---

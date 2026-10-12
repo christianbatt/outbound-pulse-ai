@@ -1,42 +1,50 @@
-# 🚀 LeadPulse B2B — Sales Intelligence & Outbound Sequences Generator
+# 🚀 LeadPulse B2B (OutboundPulse) — Sales Intelligence & Outbound Sequences Generator
 
-> **Enterprise Full-Stack B2B Sales Intelligence Platform powered by Google Gemini 3.8 Flash SDK, React 19, TypeScript, and Express. Analyzes target company copy to extract core value propositions, detect critical operational pain points, and synthesize high-converting outbound email sequences (AIDA Hook + 3-Day Follow-Up).**
+> **Enterprise Full-Stack B2B Sales Intelligence Platform powered by Google Gemini 3.8 Flash SDK, React 19, TypeScript, and Express. Analyzes target company copy to extract core value propositions, detect critical operational pain points, and synthesize high-converting outbound email sequences (AIDA Hook + 3-Day Follow-Up). Features high-availability multi-model failover with Cerebras Cloud (Llama 3.3 70B) and xAI Grok (grok-2).**
 
-[![Author](https://img.shields.io/badge/Author-Christian_Battistoni-indigo.svg?logo=github)](mailto:christianbattistoni85@gmail.com)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-outboundpulse.ai.studio-cyan.svg?logo=google-chrome)](https://outboundpulse.ai.studio)
+[![Author](https://img.shields.io/badge/Author-Christian_Battistoni-indigo.svg?logo=github)](mailto:christian.battistoni.eu@gmail.com)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg?logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19.0-61dafb.svg?logo=react)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-v4-38bdf8.svg?logo=tailwindcss)](https://tailwindcss.com/)
 [![Gemini API](https://img.shields.io/badge/Gemini_API-3.8_Flash-8e75ff.svg?logo=google)](https://ai.google.dev/)
-[![Node.js / Express](https://img.shields.io/badge/Backend-Express_%2B_Vite-green.svg?logo=express)](https://expressjs.com/)
+[![Cerebras Fallback](https://img.shields.io/badge/Fallback-Cerebras_Llama_3.3_70B-purple.svg)](https://cloud.cerebras.ai)
+[![Grok Fallback](https://img.shields.io/badge/Fallback-xAI_Grok-blue.svg)](https://x.ai)
 [![i18n](https://img.shields.io/badge/i18n-IT_%7C_EN_%7C_FR-orange.svg)](#-native-trilingual-architecture-it--en--fr)
 [![License](https://img.shields.io/badge/License-Apache_2.0-lightgrey.svg)](LICENSE)
 
 ---
 
-## 👨‍💻 Engineering Spotlight (For Hiring Managers & HR)
+## 🌐 Live Demo & Interactive Testing
 
-This project was engineered by **Christian Battistoni** ([christianbattistoni85@gmail.com](mailto:christianbattistoni85@gmail.com)) as a production-grade portfolio demonstration of modern **Full-Stack Software Engineering**, **AI/LLM System Architecture**, and **Product-Centric UX Design**.
+Test the live production application immediately in your browser:  
+👉 **[https://outboundpulse.ai.studio](https://outboundpulse.ai.studio)**
 
-### Key Architectural & Engineering Decisions:
-1. **Secure Server-Side LLM Proxying**:
-   - Zero client-side API key exposure. The frontend never imports `@google/genai` or accesses sensitive tokens.
-   - All interactions route through `POST /api/generate` running on a Node.js Express server.
-2. **Type-Safe Structured Output Schema**:
-   - Enforces a deterministic JSON output contract using the official `@google/genai` TypeScript SDK (`Type.OBJECT`, `responseSchema`, `responseMimeType: 'application/json'`).
-   - Guarantees strict output conformance without hallucinated markdown wrappers.
-3. **Resilient Heuristic Failover System**:
-   - If the remote Gemini API key encounters rate-limiting or quota depletion, the backend server automatically engages an intelligent contextual heuristic NLP engine. The UI remains resilient, operational, and responsive at all times.
-4. **Native Trilingual Internationalization (i18n)**:
-   - Full support for **Italian 🇮🇹**, **English 🇬🇧**, and **French 🇫🇷**.
-   - Language synchronization cascades across UI components, LLM prompting parameters, localized test presets, and exportable deliverables.
-5. **Privacy & Offline First (Zero Third-Party Trackers)**:
-   - Session histories persist locally in encrypted client storage. No customer prospect data is sent to external storage.
-   - Includes full offline detection and synthesized Web Audio feedback chimes with zero external audio assets.
+---
+
+## 💼 Sales Manager, Business Developer & AI Orchestrator Profile (For Recruiters & Hiring Teams)
+
+This project was conceived, orchestrated, and built end-to-end by **Christian Battistoni** ([christian.battistoni.eu@gmail.com](mailto:christian.battistoni.eu@gmail.com)).
+
+Christian is **not a traditional software developer or theoretical programmer**: his core professional identity is as a **Sales Manager, Business Developer, and Project Manager** who leverages **Generative AI as a force multiplier** to expand commercial business opportunities, accelerate revenue, and optimize operational efficiency.
+
+Through **Vibe Coding** and **AI Orchestration**, Christian directs and coordinates cutting-edge LLMs (Google Gemini 3.8 Flash, xAI Grok, Cerebras Llama 3.3 70B) to rapidly conceptualize, prototype, and ship complete enterprise SaaS solutions that solve real business bottlenecks in record time.
+
+### Core Value & Competencies Demonstrated:
+1. **Sales Management & Business Development**:
+   - Deep commercial acumen in B2B Tech and SaaS: market positioning, value proposition mapping, qualification criteria, and high-converting cold outbound strategy (AIDA framework).
+2. **Project Management & Operational Scaling**:
+   - Streamlining end-to-end delivery pipelines, removing administrative friction, and using AI automations to maximize team efficiency without inflating headcount.
+3. **AI Orchestration & Multi-Model High Availability**:
+   - Architectural mastery in coordinating multiple AI engines: Google Gemini 3.8 Flash as primary, with automatic failover to **Cerebras Cloud** (ultra-fast Llama 3.3 70B) and **xAI Grok** (grok-2), backed by a deterministic NLP heuristic engine so the platform never fails.
+4. **Vibe Coding & Rapid Prototyping**:
+   - Ability to turn high-level business briefs into production-grade web applications with trilingual internationalization (IT, EN, FR), responsive dual-card UX, local privacy encryption, and zero bloatware.
 
 ---
 
 ## 📌 Table of Contents
 - [Executive Overview](#-executive-overview)
+- [Multi-Model AI Architecture & Failover](#-multi-model-ai-architecture--failover)
 - [Key Features](#-key-features)
 - [Native Trilingual Architecture (IT / EN / FR)](#-native-trilingual-architecture-it--en--fr)
 - [JSON Output Specifications](#-json-output-specifications)
@@ -52,7 +60,7 @@ This project was engineered by **Christian Battistoni** ([christianbattistoni85@
 
 ## 💡 Executive Overview
 
-Generic cold outreach in B2B Tech and SaaS delivers near-zero response rates. **LeadPulse B2B** solves this by analyzing raw text pasted from a target company’s website, landing page, or pitch deck to produce:
+Generic cold outreach in B2B Tech and SaaS delivers near-zero response rates. **LeadPulse B2B (OutboundPulse)** solves this by analyzing raw text pasted from a target company’s website, landing page, or pitch deck to produce:
 
 1. **Strategic Sales Intelligence Card (Left)**:
    - **Core Business Model**: High-level classification (SaaS, FinTech, Logistics, Marketplace, Cybersecurity, etc.).
@@ -62,6 +70,21 @@ Generic cold outreach in B2B Tech and SaaS delivers near-zero response rates. **
 2. **High-Converting Outbound Sequences (Right)**:
    - **Email #1 — Hook AIDA (Day 1)**: Formatted via the *Attention, Interest, Desire, Action* framework, directly citing their value proposition (strict limit: **< 120 words**, friction-free CTA).
    - **Email #2 — Follow-up & Case Study (Day 4 / +3 days)**: Concrete case proof solving one of the detected pain points (strict limit: **< 80 words**).
+
+---
+
+## ⚡ Multi-Model AI Architecture & Failover
+
+To guarantee 100% uptime and resilience against rate limits or depleted credit quotas, the platform incorporates a tri-tiered AI failover cascade:
+
+| Level | Engine | Model | Role |
+|---|---|---|---|
+| **Tier 1 (Primary)** | Google Gemini | `gemini-3.8-flash` | Ultra-fast multimodal structured JSON analysis |
+| **Tier 2 (Fallback 1)** | Cerebras Cloud | `llama-3.3-70b` | Ultra-high inference throughput (2000+ tokens/sec) |
+| **Tier 3 (Fallback 2)** | xAI Grok | `grok-2-latest` | Cutting-edge frontier reasoning & failover |
+| **Tier 4 (Safety Net)** | Resilient NLP Engine | Deterministic B2B Engine | Zero-downtime heuristic generation if third-party APIs are unreachable |
+
+Users can input and verify their **Cerebras** and **Grok** API keys directly in the application's **Settings Modal**, or set them in `.env`.
 
 ---
 
@@ -79,18 +102,19 @@ Generic cold outreach in B2B Tech and SaaS delivers near-zero response rates. **
   - Live fuzzy search across company names, industries, and email subjects.
   - Favorite/Star toggle (⭐️) and 1-click session restoration.
   - Bulk data exports in **JSON**, **CSV**, and formatted **Markdown (.md)**.
-- ⚙️ **Sender Profile Customization**:
+- ⚙️ **Sender Profile & AI Customization**:
   - Configurable sender identity (name, company, value offering).
   - Target persona selection (*VP of Growth*, *COO*, *Head of Sales*, *CTO*, *Founder*).
   - Tone adaptation (Assertive Tech, Direct ROI, Consultative, Challenger).
-  - Call to Action (CTA) styling.
+  - Model preference selector (Auto Failover, Force Gemini, Force Cerebras, Force Grok).
+  - Live API key verification with instant feedback.
 - 🎨 **4 Custom Themes**:
   - **Dark Slate** (default)
   - **Midnight Navy** (deep space blue)
   - **Obsidian Pure** (pitch-black AMOLED)
   - **Clean Light** (minimal daylight)
 - 🔔 **Synthesized Audio Chimes**: Lightweight Web Audio API frequency synthesis on copy and completion events.
-- 💼 **Recruiter Showcase Modal**: Built-in interactive candidate sheet detailing engineering decisions, stack overview, and hiring contact.
+- 💼 **Recruiter Showcase Modal**: Built-in candidate sheet detailing commercial profile, engineering decisions, and direct contact.
 
 ---
 
@@ -146,9 +170,11 @@ All responses from `/api/generate` adhere strictly to the following validated JS
   - Tailwind CSS v4 (`@tailwindcss/vite` engine)
   - Lucide React (clean, lightweight iconography)
   - Web Audio API (zero external audio payloads)
-- **Backend**:
+- **Backend & AI Orchestration**:
   - Node.js & Express (`server.ts` entry point)
   - Google GenAI SDK (`@google/genai` v2)
+  - Cerebras Cloud REST Client (`llama-3.3-70b`)
+  - xAI Grok REST Client (`grok-2-latest`)
   - Vite dev server middleware integration
   - `tsx` (TypeScript execute engine)
 
@@ -160,6 +186,7 @@ All responses from `/api/generate` adhere strictly to the following validated JS
 - **Node.js** >= 18.x
 - **npm** (or pnpm / yarn)
 - A **Google Gemini API Key** (obtainable free of charge at [Google AI Studio](https://aistudio.google.com/))
+- *(Optional)* A **Cerebras Cloud API Key** ([cloud.cerebras.ai](https://cloud.cerebras.ai)) or **Grok API Key** ([console.x.ai](https://console.x.ai)) for fallback failover.
 
 ### 1. Clone the repository
 ```bash
@@ -178,11 +205,11 @@ Copy the example template:
 cp .env.example .env
 ```
 
-Edit your `.env` file and insert your API key:
+Edit your `.env` file:
 ```env
-# Google Gemini API Key - Keep this private!
-# NEVER commit this file to GitHub (already ignored by .gitignore)
 GEMINI_API_KEY="your_gemini_api_key_here"
+CEREBRAS_API_KEY="" # Optional fallback key
+GROK_API_KEY=""     # Optional fallback key
 PORT=3000
 ```
 
@@ -202,13 +229,11 @@ Open your browser at:
 > This repository is configured to be public-safe:
 > - **No real API keys are committed anywhere in the codebase.**
 > - The `.gitignore` file includes `.env*` to strictly prevent local credentials from ever being pushed to GitHub.
-> - The server reads keys exclusively from server-side environment variables (`process.env.GEMINI_API_KEY`).
+> - The server reads keys exclusively from environment variables or client-controlled localStorage headers with zero persistence to disk.
 
 ---
 
 ## 📤 How to Publish to GitHub
-
-You can publish this project to GitHub using either of the following methods:
 
 ### Method A: Directly from Google AI Studio UI
 1. Look at the top navigation bar of Google AI Studio.
@@ -218,14 +243,14 @@ You can publish this project to GitHub using either of the following methods:
 
 ### Method B: Via Terminal / Git CLI
 ```bash
-# 1. Initialize git (if not already initialized)
+# 1. Initialize git
 git init
 
 # 2. Stage all files (sensitive files are automatically skipped by .gitignore)
 git add .
 
-# 3. Commit your changes
-git commit -m "feat: complete LeadPulse B2B sales intelligence app with i18n support"
+# 3. Commit changes
+git commit -m "feat: complete LeadPulse B2B sales intelligence app with Cerebras and Grok failover"
 
 # 4. Link your remote GitHub repository
 git branch -M main
@@ -252,9 +277,10 @@ git push -u origin main
 ## 👤 Author & Contact
 
 **Christian Battistoni**  
-*Senior Full-Stack Software Engineer & AI Solutions Architect*  
-📧 **Email:** [christianbattistoni85@gmail.com](mailto:christianbattistoni85@gmail.com)  
-💼 **Portfolio & Recruiter Inquiries:** Available for full-time senior / lead engineering roles and contract AI engineering projects.
+*Sales Manager • Business Developer • Project Manager • AI Orchestrator & Vibe Coder*  
+📧 **Email:** [christian.battistoni.eu@gmail.com](mailto:christian.battistoni.eu@gmail.com)  
+🌐 **Live App Demo:** [https://outboundpulse.ai.studio](https://outboundpulse.ai.studio)  
+💼 **Opportunities:** Open to leadership and strategic roles as Sales Manager, Business Development Director, Head of Growth, AI Operations Manager, and AI Product Orchestrator.
 
 ---
 

@@ -20,7 +20,7 @@ interface SettingsModalProps {
   onClose: () => void;
   settings: UserSettings;
   onSave: (newSettings: UserSettings) => void;
-  onToast: (msg: string) => void;
+  onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -31,9 +31,56 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onToast,
 }) => {
   const [form, setForm] = useState<UserSettings>({ ...settings });
+  const [cerebrasChecking, setCerebrasChecking] = useState(false);
+  const [cerebrasStatus, setCerebrasStatus] = useState<string | null>(null);
+  const [grokChecking, setGrokChecking] = useState(false);
+  const [grokStatus, setGrokStatus] = useState<string | null>(null);
+
   const t = TRANSLATIONS[form.locale || 'it'];
 
   if (!isOpen) return null;
+
+  const testKey = async (provider: 'cerebras' | 'grok') => {
+    const key = provider === 'cerebras' ? form.cerebrasApiKey : form.grokApiKey;
+    if (!key || key.trim().length < 5) {
+      const msg = form.locale === 'it' ? 'Inserisci prima una chiave' : 'Enter key first';
+      if (provider === 'cerebras') setCerebrasStatus(msg);
+      else setGrokStatus(msg);
+      return;
+    }
+    if (provider === 'cerebras') {
+      setCerebrasChecking(true);
+      setCerebrasStatus(null);
+    } else {
+      setGrokChecking(true);
+      setGrokStatus(null);
+    }
+    try {
+      const resp = await fetch('/api/verify-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider, apiKey: key.trim() }),
+      });
+      const data = await resp.json();
+      if (data.valid) {
+        const successMsg = form.locale === 'it' ? '✅ Valida e attiva' : '✅ Valid and active';
+        if (provider === 'cerebras') setCerebrasStatus(successMsg);
+        else setGrokStatus(successMsg);
+        onToast(`${provider.toUpperCase()}: ${successMsg}`);
+      } else {
+        const errText = `❌ ${data.error || 'Non valida'}`;
+        if (provider === 'cerebras') setCerebrasStatus(errText);
+        else setGrokStatus(errText);
+        onToast(errText, 'error');
+      }
+    } catch {
+      if (provider === 'cerebras') setCerebrasStatus('❌ Errore rete');
+      else setGrokStatus('❌ Errore rete');
+    } finally {
+      if (provider === 'cerebras') setCerebrasChecking(false);
+      else setGrokChecking(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -267,6 +314,134 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 onChange={(e) => setForm({ ...form, soundEnabled: e.target.checked })}
                 className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 bg-slate-800 border-slate-700 cursor-pointer"
               />
+            </div>
+          </div>
+
+          {/* Section 4: Motori AI & Fallback (Cerebras & Grok) */}
+          <div className="space-y-3.5 pt-2 border-t border-slate-800/80">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+                <span>⚡ Motori AI & Fallback Failover (Cerebras & Grok)</span>
+              </h3>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-950/60 text-purple-300 border border-purple-800/50 font-mono">
+                Multi-Model Uptime
+              </span>
+            </div>
+
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              L'applicazione è progettata per non bloccarsi mai: se Gemini esaurisce i crediti o le quote, attiva automaticamente i motori di fallback <strong>Cerebras Cloud</strong> (Llama 3.3 70B ad altissima velocità) e <strong>xAI Grok</strong>.
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Strategia di Esecuzione AI
+                </label>
+                <select
+                  value={form.preferredProvider || 'auto'}
+                  onChange={(e) => setForm({ ...form, preferredProvider: e.target.value as any })}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-purple-500/80"
+                >
+                  <option value="auto">🔄 Automatico (Gemini 3.8 Flash con Fallback su Cerebras & Grok)</option>
+                  <option value="gemini">🔹 Forza Google Gemini (3.8 Flash)</option>
+                  <option value="cerebras">⚡ Forza Cerebras Cloud (Llama 3.3 70B - Ultra Veloce)</option>
+                  <option value="grok">🚀 Forza xAI Grok (grok-2-latest)</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Cerebras Key Card */}
+                <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-200 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
+                      <span>Cerebras API Key</span>
+                    </span>
+                    <a
+                      href="https://cloud.cerebras.ai"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[10px] text-indigo-400 hover:underline"
+                    >
+                      Ottieni gratis ↗
+                    </a>
+                  </div>
+                  <input
+                    type="password"
+                    value={form.cerebrasApiKey || ''}
+                    onChange={(e) => {
+                      setForm({ ...form, cerebrasApiKey: e.target.value });
+                      if (cerebrasStatus) setCerebrasStatus(null);
+                    }}
+                    placeholder="csk-..."
+                    className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500/80 font-mono"
+                  />
+                  <div className="flex items-center justify-between gap-2 pt-0.5">
+                    <span className="text-[10px] text-slate-500 truncate">
+                      Llama 3.3 70B (2000+ t/s)
+                    </span>
+                    <button
+                      type="button"
+                      disabled={cerebrasChecking || !form.cerebrasApiKey}
+                      onClick={() => testKey('cerebras')}
+                      className="px-2 py-0.5 rounded bg-slate-800 hover:bg-indigo-600/30 text-[10px] font-semibold text-indigo-300 border border-slate-700/60 transition-colors disabled:opacity-50 cursor-pointer shrink-0"
+                    >
+                      {cerebrasChecking ? 'Verifica...' : 'Verifica test'}
+                    </button>
+                  </div>
+                  {cerebrasStatus && (
+                    <div className="text-[10px] font-mono p-1 rounded bg-slate-950/80 border border-slate-800 text-indigo-300">
+                      {cerebrasStatus}
+                    </div>
+                  )}
+                </div>
+
+                {/* Grok Key Card */}
+                <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-200 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+                      <span>Grok (xAI) API Key</span>
+                    </span>
+                    <a
+                      href="https://console.x.ai"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[10px] text-cyan-400 hover:underline"
+                    >
+                      Ottieni ↗
+                    </a>
+                  </div>
+                  <input
+                    type="password"
+                    value={form.grokApiKey || ''}
+                    onChange={(e) => {
+                      setForm({ ...form, grokApiKey: e.target.value });
+                      if (grokStatus) setGrokStatus(null);
+                    }}
+                    placeholder="xai-..."
+                    className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500/80 font-mono"
+                  />
+                  <div className="flex items-center justify-between gap-2 pt-0.5">
+                    <span className="text-[10px] text-slate-500 truncate">
+                      Modello grok-2-latest
+                    </span>
+                    <button
+                      type="button"
+                      disabled={grokChecking || !form.grokApiKey}
+                      onClick={() => testKey('grok')}
+                      className="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-600/30 text-[10px] font-semibold text-cyan-300 border border-slate-700/60 transition-colors disabled:opacity-50 cursor-pointer shrink-0"
+                    >
+                      {grokChecking ? 'Verifica...' : 'Verifica test'}
+                    </button>
+                  </div>
+                  {grokStatus && (
+                    <div className="text-[10px] font-mono p-1 rounded bg-slate-950/80 border border-slate-800 text-cyan-300">
+                      {grokStatus}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 

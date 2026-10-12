@@ -9,6 +9,7 @@ import {
   RotateCcw,
   ExternalLink,
   HelpCircle,
+  Key,
 } from 'lucide-react';
 import {
   GeneratedCampaignData,
@@ -149,6 +150,9 @@ export default function App() {
           tone: settings.tone,
           ctaStyle: settings.ctaStyle,
           language: settings.language !== 'auto' ? settings.language : settings.locale,
+          preferredProvider: settings.preferredProvider || 'auto',
+          cerebrasApiKey: settings.cerebrasApiKey,
+          grokApiKey: settings.grokApiKey,
         }),
       });
 
@@ -321,6 +325,11 @@ export default function App() {
             isGenerating={isGenerating}
             settings={settings}
             onSelectPreset={handleSelectPreset}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onScrapeSuccess={(siteTitle) => {
+              setCurrentCompanyName(siteTitle);
+              addToast(`Intelligence acquisita da: ${siteTitle}`, 'success');
+            }}
           />
         </section>
 
@@ -334,7 +343,7 @@ export default function App() {
         {/* API Error Diagnostic Card */}
         {apiError && !isGenerating && (
           <div className="p-5 rounded-2xl bg-rose-950/40 border border-rose-800/80 text-rose-100 shadow-xl backdrop-blur-sm animate-fadeIn space-y-3">
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
               <div className="flex items-start gap-3">
                 <div className="p-2 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-300 shrink-0 mt-0.5">
                   <AlertTriangle className="w-5 h-5" />
@@ -354,13 +363,22 @@ export default function App() {
                 </div>
               </div>
 
-              <button
-                onClick={handleGenerate}
-                className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 shrink-0 cursor-pointer"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Riprova</span>
-              </button>
+              <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                <button
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-md shadow-indigo-600/30"
+                >
+                  <Key className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Configura Chiavi Fallback</span>
+                </button>
+                <button
+                  onClick={handleGenerate}
+                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Riprova</span>
+                </button>
+              </div>
             </div>
 
             {apiError.code === 'CREDITS_EXHAUSTED' && (
@@ -408,6 +426,27 @@ export default function App() {
               <span>Modello: {currentMetrics.model}</span>
               <span className="hidden sm:inline text-emerald-400 font-medium">{t.savedLocal}</span>
             </div>
+          </div>
+        )}
+
+        {/* Fallback Notice Banner */}
+        {currentMetrics?.fallbackUsed && (
+          <div className="p-3.5 rounded-xl bg-purple-950/40 border border-purple-800/70 text-purple-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold text-[10px] tracking-wide shrink-0">
+                FAILOVER ATTIVO
+              </span>
+              <span className="text-slate-300 leading-relaxed">
+                {currentMetrics.fallbackNotice || 'Campagna generata con motore di failover resiliente.'}
+              </span>
+            </div>
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="text-xs text-cyan-300 hover:text-white flex items-center gap-1 font-semibold underline shrink-0 cursor-pointer"
+            >
+              <Key className="w-3 h-3 text-amber-400" />
+              <span>Gestisci Chiavi Cerebras / Grok ↗</span>
+            </button>
           </div>
         )}
 
@@ -473,18 +512,27 @@ export default function App() {
       {/* Global Footer */}
       <footer className="border-t border-slate-800/80 bg-slate-950/80 mt-12 py-6 text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
             <span className="font-bold text-slate-400">LeadPulse B2B</span>
-            <span>• Sales Intelligence & Outbound Sequences</span>
+            <span className="text-slate-500">
+              • Created by <strong className="text-slate-300 font-medium">Christian Battistoni</strong> (Sales Manager • Business Developer • Project Manager • AI Orchestrator) —{' '}
+              <a href="mailto:christian.battistoni.eu@gmail.com" className="text-indigo-400 hover:underline">
+                christian.battistoni.eu@gmail.com
+              </a>{' '}
+              • Demo Live:{' '}
+              <a href="https://outboundpulse.ai.studio" target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline font-semibold">
+                outboundpulse.ai.studio
+              </a>
+            </span>
           </div>
 
           <div className="flex items-center gap-4 text-[11px]">
             <span className="flex items-center gap-1 text-slate-400">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              Local Encryption & Zero Tracker
+              Zero Tracker & Local Encrypted
             </span>
             <span>🇮🇹 / 🇬🇧 / 🇫🇷 Multi-language Support</span>
-            <span>Gemini 3.8 Flash SDK</span>
+            <span>Gemini • Grok • Cerebras Multi-AI</span>
           </div>
         </div>
       </footer>

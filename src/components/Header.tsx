@@ -81,7 +81,7 @@ export const Header: React.FC<HeaderProps> = ({
           <Briefcase className="w-3.5 h-3.5 text-indigo-400 group-hover:scale-110 transition-transform" />
           <span className="font-medium">Christian Battistoni</span>
           <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-mono">
-            Full-Stack Lead
+            Sales & AI Orchestrator
           </span>
         </button>
 

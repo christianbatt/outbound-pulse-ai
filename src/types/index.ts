@@ -1,7 +1,20 @@
+export interface PainPointItem {
+  pain: string;
+  category?: 'operations' | 'technology' | 'commercial' | 'compliance' | 'scalability' | string;
+  impact?: string;
+}
+
 export interface CompanyAnalysis {
   core_business: string;
   value_proposition: string;
   detected_pains: string[];
+  detailed_pains?: PainPointItem[];
+  target_url?: string;
+  web_sources?: string[];
+  swot_highlights?: {
+    strengths?: string;
+    vulnerabilities?: string;
+  };
 }
 
 export interface EmailHook {
@@ -28,6 +41,9 @@ export interface GenerationMetrics {
   latencyMs: number;
   model: string;
   completedAt: string;
+  provider?: 'gemini' | 'cerebras' | 'grok';
+  fallbackUsed?: boolean;
+  fallbackNotice?: string;
 }
 
 export interface SessionRecord {
@@ -53,6 +69,9 @@ export interface UserSettings {
   soundEnabled: boolean;
   autoSave: boolean;
   recipientName: string;
+  preferredProvider?: 'auto' | 'gemini' | 'cerebras' | 'grok';
+  cerebrasApiKey?: string;
+  grokApiKey?: string;
 }
 
 export interface PresetCompany {
